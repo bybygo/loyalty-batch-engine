@@ -1,0 +1,27 @@
+# kubernetes/deployments/app-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loyalty-batch-engine
+  labels:
+    app: loyalty-batch-engine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loyalty-batch-engine
+  template:
+    metadata:
+      labels:
+        app: loyalty-batch-engine
+    spec:
+      containers:
+        - name: loyalty-batch-engine
+          image: loyalty-batch-engine:1.0.0
+          ports:
+            - containerPort: 9874
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: postgres-secrets
