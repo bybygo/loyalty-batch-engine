@@ -3,10 +3,12 @@ plugins {
     id 'org.springframework.boot' version '3.2.0'
     id 'io.spring.dependency-management' version '1.1.4'
     id 'com.diffplug.spotless' version '6.23.3'
+    id 'jacoco'
+    id 'com.gorylenko.gradle-git-properties' version '2.4.1'
 }
 
-group = 'com.bybygo'
-version = '0.0.1-SNAPSHOT'
+group = 'com.bybygo.loyalty'
+version = '0.0.1'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -23,6 +25,10 @@ repositories {
     mavenCentral()
 }
 
+ext {
+    set('springCloudVersion', "2023.0.0")
+}
+
 dependencies {
     // Spring Boot Starters
     implementation 'org.springframework.boot:spring-boot-starter-batch'
@@ -31,6 +37,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
 
     // Database
     implementation 'org.postgresql:postgresql:42.7.0'
@@ -39,10 +46,23 @@ dependencies {
     // Documentation
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
 
+    // Monitoring & Metrics
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+
+    // Cloud Config & Discovery
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap'
+
+    // Resilience
+    implementation 'org.springframework.retry:spring-retry'
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3'
+
     // Utils
     implementation 'org.apache.commons:commons-lang3:3.13.0'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -52,11 +72,60 @@ dependencies {
     testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
 }
 
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    "com/bybygo/loyalty/model/**",
+                    "com/bybygo/loyalty/config/**"
+            ])
+        }))
+    }
+}
+
 spotless {
     java {
         importOrder()
         removeUnusedImports()
         cleanthat()
         googleJavaFormat()
+    }
+}
+
+springBoot {
+    buildInfo()
+}
+
+tasks.named('generateGitProperties').configure {
+    enabled = false
+}
+
+// Custom tasks for Azure Pipeline
+tasks.register('azurePrepareBuild') {
+    doLast {
+        println "Preparing build for Azure Pipeline..."
+    }
+}
+
+tasks.register('azureVerifyBuild') {
+    doLast {
+        println "Verifying build for Azure Pipeline..."
     }
 }
