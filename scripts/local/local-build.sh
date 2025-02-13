@@ -4,6 +4,7 @@
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
 # Variables
@@ -97,12 +98,22 @@ fi
 
 # Add after container start
 echo -e "${BLUE}Waiting for application to start...${NC}"
-sleep 5  # Adjust based on your application startup time
-if curl -f http://localhost:9874/health 2>/dev/null; then
-    echo -e "${GREEN}Application is healthy${NC}"
-    echo -e "${GREEN}Application is running on http://localhost:9874${NC}"
-else
-    echo -e "${RED}Application health check failed${NC}"
-#    exit 1
-fi
 
+MAX_RETRIES=30
+RETRY_INTERVAL=2
+COUNTER=0
+
+while [ $COUNTER -lt $MAX_RETRIES ]; do
+    if curl -f http://localhost:9874/api/v1/health -s > /dev/null; then
+        echo -e "${GREEN}Application started successfully${NC}"
+        echo -e "${GREEN}Application is running on http://localhost:9874${NC}"
+        exit 0
+    else
+        echo -e "${YELLOW}Waiting for application startup... (Attempt $((COUNTER+1))/$MAX_RETRIES)${NC}"
+        COUNTER=$((COUNTER+1))
+        sleep $RETRY_INTERVAL
+    fi
+done
+
+echo -e "${RED}Application failed to start after $((MAX_RETRIES * RETRY_INTERVAL)) seconds${NC}"
+exit 1

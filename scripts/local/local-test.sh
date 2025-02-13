@@ -11,7 +11,7 @@ echo -e "${BLUE}Testing endpoints...${NC}"
 
 # Create test transaction
 echo -e "${BLUE}Creating test transaction...${NC}"
-curl -X POST 'http://localhost:9874/api/v1/test/transactions' \
+curl -X POST 'http://localhost:9874/api/v1/transactions' \
 -H 'Content-Type: application/json' \
 -d '{
     "customerId": 1001,
@@ -27,7 +27,7 @@ echo -e "${BLUE}Starting batch job...${NC}"
 curl -X POST 'http://localhost:9874/api/v1/batch/jobs' \
 -H 'Content-Type: application/json' \
 -d '{
-    "processDate": "2023-12-14",
+    "processDate": "2024-02-14",
     "description": "Test batch processing",
     "requestId": "TEST-001"
 }'
