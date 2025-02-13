@@ -1,0 +1,14 @@
+idea {
+  project {
+    jdkName = '21'
+    languageLevel = JavaVersion.VERSION_21
+  }
+
+  module {
+    downloadSources = true
+    downloadJavadoc = true
+    inheritOutputDirs = false
+    outputDir = file("$buildDir/classes/main/")
+    testOutputDir = file("$buildDir/classes/test/")
+  }
+}

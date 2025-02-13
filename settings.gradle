@@ -1,2 +1,17 @@
 rootProject.name = 'loyalty-batch-engine'
 
+// Enable build cache
+buildCache {
+  local {
+    enabled = true
+    directory = new File(rootDir, 'build-cache')
+    push = true
+  }
+  remote(HttpBuildCache) {
+    enabled = false // Enable if you have a remote cache server
+    url = uri("https://your-remote-cache-server")
+    push = false
+  }
+}
+
+enableFeaturePreview('TYPESAFE_PROJECT_ACCESSORS')

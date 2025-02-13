@@ -1,0 +1,38 @@
+spotless {
+  encoding 'UTF-8'
+
+  java {
+    importOrder()
+    removeUnusedImports()
+    cleanthat()
+    googleJavaFormat()
+
+    custom 'Lambda fix', { it.replace('} )', '})').replace('} ,', '},') }
+
+    target 'src/*/java/**/*.java'
+
+    toggleOffOn()
+    endWithNewline()
+    indentWithSpaces(4)
+    trimTrailingWhitespace()
+  }
+
+  format 'misc', {
+    target '*.gradle', '*.md', '.gitignore'
+    trimTrailingWhitespace()
+    indentWithSpaces(4)
+    endWithNewline()
+  }
+
+  format 'xml', {
+    target '*.xml'
+    eclipseWtp('xml')
+    trimTrailingWhitespace()
+    indentWithSpaces(2)
+    endWithNewline()
+  }
+}
+
+spotlessDiagnose {
+  enabled = true
+}

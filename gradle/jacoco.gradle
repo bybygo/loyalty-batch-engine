@@ -1,0 +1,75 @@
+apply plugin: 'jacoco'
+
+tasks.named('jacocoTestReport') {
+  reports {
+    html {
+      required = true
+      outputLocation = layout.buildDirectory.dir('reports/jacoco')
+    }
+
+    xml {
+      required = true
+      outputLocation = layout.buildDirectory.file('reports/jacoco/jacocoTestReport.xml')
+    }
+
+    csv.required = false
+  }
+
+  classDirectories.setFrom(files(classDirectories.files.collect {
+    fileTree(dir: it, exclude: [
+      'com/bybygo/loyalty/model/**',
+      'com/bybygo/loyalty/config/**'
+    ])
+  }))
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+  violationRules {
+    failOnViolation = true
+
+    rule {
+      element = 'CLASS'
+      includes = ['com.bybygo.loyalty.*']
+
+      limit {
+        counter = 'LINE'
+        value = 'COVEREDRATIO'
+        minimum = 0.80
+      }
+
+      limit {
+        counter = 'BRANCH'
+        value = 'COVEREDRATIO'
+        minimum = 0.70
+      }
+
+      excludes = [
+        'com.bybygo.loyalty.model.*',
+        'com.bybygo.loyalty.config.*'
+      ]
+    }
+
+    rule {
+      element = 'PACKAGE'
+      includes = ['com.bybygo.loyalty.*']
+
+      limit {
+        counter = 'LINE'
+        value = 'COVEREDRATIO'
+        minimum = 0.80
+      }
+    }
+  }
+}
+
+tasks.named('test') {
+  finalizedBy tasks.named('jacocoTestReport')
+}
+
+tasks.named('check') {
+  dependsOn tasks.named('jacocoTestCoverageVerification')
+}
+
+tasks.named('jacocoTestCoverageVerification').configure {
+  dependsOn jacocoTestReport
+}

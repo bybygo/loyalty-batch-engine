@@ -1,0 +1,89 @@
+configurations {
+  integrationTestImplementation.extendsFrom testImplementation
+  integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+  functionalTestImplementation.extendsFrom testImplementation
+  functionalTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+sourceSets {
+  integrationTest {
+    java {
+      srcDir 'src/integrationTest/java'
+      compileClasspath += main.output + test.output
+      runtimeClasspath += main.output + test.output
+    }
+    resources {
+      srcDir 'src/integrationTest/resources'
+    }
+  }
+
+  functionalTest {
+    java {
+      srcDir 'src/functionalTest/java'
+      compileClasspath += main.output + test.output
+      runtimeClasspath += main.output + test.output
+    }
+    resources {
+      srcDir 'src/functionalTest/resources'
+    }
+  }
+}
+
+tasks.register('integrationTest', Test) {
+  description = 'Runs integration tests.'
+  group = 'verification'
+
+  testClassesDirs = sourceSets.integrationTest.output.classesDirs
+  classpath = sourceSets.integrationTest.runtimeClasspath
+
+  useJUnitPlatform()
+
+  outputs.upToDateWhen { false }
+
+  systemProperty 'spring.profiles.active', 'integration-test'
+
+  failFast = true
+}
+
+tasks.register('functionalTest', Test) {
+  description = 'Runs functional tests.'
+  group = 'verification'
+
+  testClassesDirs = sourceSets.functionalTest.output.classesDirs
+  classpath = sourceSets.functionalTest.runtimeClasspath
+
+  useJUnitPlatform()
+
+  outputs.upToDateWhen { false }
+
+  systemProperty 'spring.profiles.active', 'functional-test'
+
+  failFast = true
+
+  mustRunAfter tasks.named('integrationTest')
+}
+
+tasks.withType(Test).configureEach {
+  reports {
+    html.required = true
+    junitXml.required = true
+  }
+
+  maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+
+  failFast = true
+
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat = 'full'
+    showStandardStreams = true
+    showExceptions = true
+    showCauses = true
+    showStackTraces = true
+  }
+}
+
+tasks.named('check') {
+  dependsOn tasks.named('integrationTest')
+  dependsOn tasks.named('functionalTest')
+}

@@ -1,131 +1,109 @@
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.2.0'
-    id 'io.spring.dependency-management' version '1.1.4'
-    id 'com.diffplug.spotless' version '6.23.3'
-    id 'jacoco'
-    id 'com.gorylenko.gradle-git-properties' version '2.4.1'
+  id 'idea'
+  id 'java'
+  id 'org.springframework.boot' version '3.2.2'
+  id 'io.spring.dependency-management' version '1.1.4'
+  id 'com.diffplug.spotless' version '6.23.3'
+  id 'jacoco'
+  id 'com.adarshr.test-logger' version '4.0.0'
+  id 'com.github.ben-manes.versions' version '0.50.0'
 }
+
+apply from: 'gradle/versions.gradle'
+apply from: 'gradle/idea.gradle'
+apply from: 'gradle/spotless.gradle'
+apply from: 'gradle/test-sets.gradle'
+apply from: 'gradle/dependencies.gradle'
+apply from: 'gradle/jacoco.gradle'
 
 group = 'com.bybygo.loyalty'
 version = '0.0.1'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
+
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
 }
 
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
-}
+defaultTasks 'clean', 'build'
 
 repositories {
-    mavenCentral()
+  mavenCentral()
+  maven {
+    url "https://repo.spring.io/milestone"
+    mavenContent {
+      releasesOnly()
+    }
+  }
 }
 
-ext {
-    set('springCloudVersion', "2023.0.0")
+configurations.configureEach {
+  resolutionStrategy {
+    cacheDynamicVersionsFor 10, 'minutes'
+    cacheChangingModulesFor 4, 'hours'
+  }
 }
 
-dependencies {
-    // Spring Boot Starters
-    implementation 'org.springframework.boot:spring-boot-starter-batch'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-cache'
-
-    // Database
-    implementation 'org.postgresql:postgresql:42.7.0'
-    implementation 'org.flywaydb:flyway-core'
-
-    // Documentation
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
-
-    // Monitoring & Metrics
-    implementation 'io.micrometer:micrometer-registry-prometheus'
-    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
-
-    // Cloud Config & Discovery
-    implementation 'org.springframework.cloud:spring-cloud-starter-config'
-    implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap'
-
-    // Resilience
-    implementation 'org.springframework.retry:spring-retry'
-    implementation 'io.github.resilience4j:resilience4j-spring-boot3'
-
-    // Utils
-    implementation 'org.apache.commons:commons-lang3:3.13.0'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-
-    // Testing
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.batch:spring-batch-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'org.testcontainers:postgresql:1.19.3'
-    testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
+dependencyLocking {
+  lockAllConfigurations()
 }
 
 dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-    }
+  imports {
+    mavenBom "org.springframework.cloud:spring-cloud-dependencies:${versions.springCloud}"
+  }
 }
 
-test {
-    useJUnitPlatform()
-    finalizedBy jacocoTestReport
+tasks.withType(JavaCompile).configureEach {
+  options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+  options.encoding = 'UTF-8'
+  options.fork = true
+  options.forkOptions.jvmArgs << '-XX:+UseParallelGC'
 }
 
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.required = true
-        csv.required = false
-        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
-    }
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                    "com/bybygo/loyalty/model/**",
-                    "com/bybygo/loyalty/config/**"
-            ])
-        }))
-    }
-}
-
-spotless {
-    java {
-        importOrder()
-        removeUnusedImports()
-        cleanthat()
-        googleJavaFormat()
-    }
+tasks.register('developmentCheck') {
+  group = 'verification'
+  description = 'Runs all checks needed during development'
+  dependsOn tasks.named('check'),
+    tasks.named('spotlessCheck'),
+    tasks.named('dependencyCheck')
 }
 
 springBoot {
-    buildInfo()
-}
-
-tasks.named('generateGitProperties').configure {
-    enabled = false
-}
-
-// Custom tasks for Azure Pipeline
-tasks.register('azurePrepareBuild') {
-    doLast {
-        println "Preparing build for Azure Pipeline..."
+  buildInfo {
+    properties {
+      additional.set([
+        'java.version': System.getProperty('java.version'),
+        'java.vendor' : System.getProperty('java.vendor'),
+        'os.name'     : System.getProperty('os.name'),
+        'os.version'  : System.getProperty('os.version'),
+        'build.time'  : new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+      ])
     }
+  }
 }
 
-tasks.register('azureVerifyBuild') {
-    doLast {
-        println "Verifying build for Azure Pipeline..."
-    }
+tasks.withType(Test).configureEach {
+  useJUnitPlatform()
+  maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat = 'full'
+    showStandardStreams = true
+    showExceptions = true
+    showCauses = true
+    showStackTraces = true
+  }
+}
+
+tasks.named('check') {
+  dependsOn 'spotlessApply'
+}
+
+tasks.named('compileJava') {
+  dependsOn 'spotlessApply'
 }

@@ -1,0 +1,56 @@
+dependencies {
+  // Spring Boot Starters
+  implementation 'org.springframework.boot:spring-boot-starter-batch'
+  implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  implementation 'org.springframework.boot:spring-boot-starter-validation'
+  implementation 'org.springframework.boot:spring-boot-starter-actuator'
+  implementation 'org.springframework.boot:spring-boot-starter-security'
+  implementation 'org.springframework.boot:spring-boot-starter-cache'
+  implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+  // Database
+  implementation "org.postgresql:postgresql:${versions.postgresql}"
+  implementation 'org.flywaydb:flyway-core'
+  implementation 'com.zaxxer:HikariCP'
+
+  // Documentation
+  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+
+  // Monitoring & Metrics
+  implementation 'io.micrometer:micrometer-registry-prometheus'
+  implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+  implementation 'io.opentelemetry:opentelemetry-api'
+  implementation 'io.opentelemetry:opentelemetry-sdk'
+
+  // Cloud Config & Discovery
+  implementation 'org.springframework.cloud:spring-cloud-starter-config'
+  implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap'
+
+  // Resilience
+  implementation 'org.springframework.retry:spring-retry'
+  implementation "io.github.resilience4j:resilience4j-spring-boot3:${versions.resilience4j}"
+
+  // Cache
+  implementation 'com.github.ben-manes.caffeine:caffeine'
+
+  // Utils
+  implementation 'org.apache.commons:commons-lang3:3.14.0'
+  implementation "com.google.guava:guava:${versions.guava}"
+  compileOnly "org.projectlombok:lombok:${versions.lombok}"
+  annotationProcessor "org.projectlombok:lombok:${versions.lombok}"
+  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+  // Testing
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testImplementation 'org.springframework.batch:spring-batch-test'
+  testImplementation 'org.springframework.security:spring-security-test'
+  testImplementation "org.testcontainers:postgresql:${versions.testcontainers}"
+  testImplementation "org.testcontainers:junit-jupiter:${versions.testcontainers}"
+  testImplementation 'org.mockito:mockito-junit-jupiter'
+  testImplementation "com.tngtech.archunit:archunit-junit5:${versions.archunit}"
+
+  // Integration Testing
+  integrationTestImplementation 'org.springframework.boot:spring-boot-starter-test'
+  integrationTestImplementation "org.testcontainers:postgresql:${versions.testcontainers}"
+}
