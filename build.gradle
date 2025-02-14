@@ -1,10 +1,9 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.0'
+    id 'org.springframework.boot' version '3.2.2'
     id 'io.spring.dependency-management' version '1.1.4'
     id 'com.diffplug.spotless' version '6.23.3'
     id 'jacoco'
-    id 'com.gorylenko.gradle-git-properties' version '2.4.1'
 }
 
 group = 'com.bybygo.loyalty'
@@ -113,11 +112,6 @@ springBoot {
     buildInfo()
 }
 
-tasks.named('generateGitProperties').configure {
-    enabled = false
-}
-
-// Custom tasks for Azure Pipeline
 tasks.register('azurePrepareBuild') {
     doLast {
         println "Preparing build for Azure Pipeline..."

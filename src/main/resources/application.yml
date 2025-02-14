@@ -3,8 +3,8 @@ spring:
     name: loyalty-batch-engine
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/loyalty_db}
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:postgres}
+    username: ${POSTGRES_USER:loyaltyadmin}
+    password: ${POSTGRES_PASSWORD:loyaltyadmin}
     driver-class-name: org.postgresql.Driver
     test-on-connect: true
     hikari:
