@@ -7,6 +7,11 @@ APP_NAME=loyalty-batch-engine
 VERSION=latest
 DOCKER_IMAGE=$(APP_NAME):$(VERSION)
 
+REGISTRY_PORT=5000
+REGISTRY_NAME=localhost
+REGISTRY_URL=$(REGISTRY_NAME):$(REGISTRY_PORT)
+DOCKER_IMAGE_LOCAL=$(REGISTRY_URL)/$(APP_NAME):$(VERSION)
+
 help:
 	@echo "Available targets:"
 	@echo "  build              - Build the application"
@@ -28,6 +33,10 @@ help:
 	@echo "  logs             - Show logs (usage: make logs service=[app|postgres|bytebase])"
 	@echo "  docker-logs      - Show application container logs"
 	@echo "  docker-stop      - Stop application container"
+	@echo "  registry-start    - Start local Docker registry"
+	@echo "  registry-stop     - Stop local Docker registry"
+	@echo "  registry-status   - Check local registry status"
+	@echo "  registry-clean    - Remove local registry container"
 
 build:
 	./gradlew build -x test
@@ -56,9 +65,10 @@ azure-verify:
 
 docker-build:
 	podman build -t $(DOCKER_IMAGE) .
+	podman tag $(DOCKER_IMAGE) $(DOCKER_IMAGE_LOCAL)
 
 docker-push:
-	podman push $(DOCKER_IMAGE)
+	podman push --tls-verify=false $(DOCKER_IMAGE_LOCAL)
 
 docker-run: docker-build
 	podman run --replace --name $(APP_NAME) \
@@ -107,23 +117,25 @@ bytebase-clean: bytebase-stop
 	podman rm -f bytebase 2>/dev/null || true
 	podman volume rm bytebase-data 2>/dev/null || true
 
-start-all: postgres bytebase docker-run
+registry-start:
+	podman run --replace --name registry \
+		-p $(REGISTRY_PORT):$(REGISTRY_PORT) \
+		-d registry:2
+
+registry-stop:
+	podman stop registry || true
+
+registry-status:
+	@echo "=== Registry Status ==="
+	@podman ps -f name=registry
+	@echo "\nAvailable images in registry:"
+	@curl -s http://$(REGISTRY_URL)/v2/_catalog || echo "Registry not responding"
+
+registry-clean: registry-stop
+	podman rm -f registry 2>/dev/null || true
+
+start-all: registry-start postgres bytebase docker-run
 	@echo "All services started"
 
-stop-all: docker-stop postgres-clean bytebase-stop
+stop-all: docker-stop postgres-clean bytebase-stop registry-stop
 	@echo "All services stopped"
-
-status:
-	@echo "=== Container Status ==="
-	podman ps -a
-
-logs:
-	@if [ "$(service)" = "app" ]; then \
-		podman logs -f $(APP_NAME); \
-	elif [ "$(service)" = "postgres" ]; then \
-		podman logs -f loyalty-postgres; \
-	elif [ "$(service)" = "bytebase" ]; then \
-		podman logs -f bytebase; \
-	else \
-		echo "Usage: make logs service=[app|postgres|bytebase]"; \
-	fi

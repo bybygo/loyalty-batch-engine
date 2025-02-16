@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loyalty-batch-engine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loyalty-batch-engine
+  template:
+    metadata:
+      labels:
+        app: loyalty-batch-engine
+    spec:
+      containers:
+        - name: loyalty-batch-engine
+          image: localhost:5000/loyalty-batch-engine:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9874
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1024Mi"
+              cpu: "600m"
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 9874
+            initialDelaySeconds: 300
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 9874
+            initialDelaySeconds: 300
+            periodSeconds: 10
